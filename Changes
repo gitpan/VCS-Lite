@@ -1,5 +1,11 @@
 Revision history for Perl extension VCS::Lite.
 
+0.07  Sun Apr 03 2005
+	- Fix script errors in vldiff.pl and vlpatch.pl
+	- Lose the .pl in the script names.
+	- Add apply method to VCS::Lite, which provides an anternative
+	  interface to merging.
+
 0.06  Wed Dec 29 10:05:12 2004
 	- Change underlying object type to be a hash. 
 	- Implement windowing of diffs.

@@ -11,11 +11,13 @@ data/marinerx1.udif
 data/marinerxy.txt
 data/marinery.dif
 data/marinery.txt
+data/marinerz.txt
 lib/VCS/Lite.pm
 lib/VCS/Lite/Delta.pm
-scripts/vldiff.pl
-scripts/vlmerge.pl
-scripts/vlpatch.pl
+scripts/vldiff
+scripts/vlmerge
+scripts/vlpatch
 t/diff.t
+t/merge.t
 t/merge1.t
 t/patch.t

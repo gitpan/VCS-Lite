@@ -8,5 +8,5 @@ WriteMakefile(
     ABSTRACT_FROM	=> 'lib/VCS/Lite.pm', 
     AUTHOR     		=> 'Ivor Williams <IVORW@cpan.org>',
     EXE_FILES		=> [qw( 
-    	scripts/vldiff.pl scripts/vlpatch.pl scripts/vlmerge.pl)],
+    	scripts/vldiff scripts/vlpatch scripts/vlmerge)],
 );

@@ -36,7 +36,7 @@ my $win = 0;
 if ($wintxt =~ /(\d+),(\d+)/) {
 	$win = [$1,$2];
 }
-elsif ($wintxt =~ /(\d+)/ {
+elsif ($wintxt =~ /(\d+)/) {
 	$win = $1;
 }
 

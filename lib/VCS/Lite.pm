@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 NAME
 
@@ -69,10 +69,22 @@ $source if unspecified causes $object_id to be opened as a file and its
 entire contents read in. The alternative is to supply $source, which can
 be one of the following:
 
-  scalar - This is a string which is tokenized using $separator
-  arrayref - Array of tokens
-  filehandle or globref - contents of file are slurped
-  callback - This is called successively to obtain tokens until received undef.
+=over 4
+
+=item *
+
+scalar - This is a string which is tokenized using $separator
+
+=item *
+arrayref - Array of tokens
+
+=item *
+filehandle or globref - contents of file are slurped
+
+=item *
+callback - This is called successively to obtain tokens until received undef.
+
+=back
 
 In the Perl spirit of DWIM, new assumes that given an arrayref, you
 have already done all the work of making your list of whatevers. Given
@@ -80,6 +92,26 @@ a string (filename) or a file handle, the file is slurped, reading
 each line of text into a member of the array. Given a callback, the
 routine is called successively with arguments $p1, $p2, etc. and is
 expected to return a scalar which is added (pushed on) to the array.
+
+=head2 apply
+
+  $lite->apply($lite2);
+  $lite->apply($lite3, base => 'original');
+
+This method call corresponds approximately to a version control system's
+check-in function. This causes $lite to be modified, so that its contents
+now reflect those of $lite2.
+
+$lite does retain the original contents, available via L<original>. However,
+unlike in a version control system, the object holds only the first original 
+and latest contents.
+
+The VCS::Lite object passed in can also have its own original version. If 
+this is the case, merging will be performed to incorporate the change as if
+it had come from a different branch. To facilitiate the merging process,
+optionally specify a base version, which can be the string 'original', 
+'contents' (the default) or a VCS::Lite object whose contents will be used.
+This corresponds to the "common ancestor" in version control systems.
 
 =head2 text
 
@@ -186,6 +218,35 @@ sub new {
 		separator => $sep },$class;
 }
 
+sub original {
+	my $self = shift;
+
+	my $pkg = ref $self;
+
+	exists($self->{original}) ?
+		bless ({ id => $self->id,
+			contents => $self->{original},
+			separator => $self->{separator}}, $pkg ) :
+		$self;
+}
+
+sub apply {
+	my ($self,$other,%par) = @_;
+
+	my $pkg = ref $self;
+	my $base = $par{base};
+	$base ||= 'contents';
+	$base = $pkg->new( $self->id,
+			$self->{separator},
+			$self->{$base})
+		unless ref $base;
+	my $cbase = exists($other->{original}) ? $other->original : $base;
+	my $mrg = $cbase->merge($base,$other);
+	my $mrg2 = $base->merge($self,$mrg);
+	$self->{original} ||= $self->{contents};
+	$self->{contents} = [$mrg2->text];
+}
+	
 sub text {
 	my ($self,$sep) = @_;
 	

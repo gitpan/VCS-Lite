@@ -32,7 +32,7 @@ my $dt1 = VCS::Lite::Delta->new($patsrc,undef,$orig,$pat);
 my $chg = $el1->patch($dt1) or die "Patch failed";
 
 if (!$output) {
-	rename $orig "$orig.orig";
+	rename $orig, "$orig.orig";
 	$output = $orig;
 }
 
