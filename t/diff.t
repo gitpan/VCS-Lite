@@ -1,11 +1,6 @@
 
-# `make test'. After `make install' it should work as `perl test.pl'
-
-#########################
-
-# change 'tests => 1' to 'tests => last_test_to_print';
-
-use Test::More tests => 12;
+use strict;
+use Test::More tests => 13;
 use VCS::Lite;
 
 my $el1 = VCS::Lite->new('data/mariner.txt');
@@ -65,13 +60,13 @@ ok($diff, 'Diff returns differences');
 #print DIFF $diff;
 #close DIFF;
 
-my $results = do { local (@ARGV, $/) = 'data/marinerx.dif'; <> }; # slurp entire file
+my $results = do { local (@ARGV, $/) = 'data/marinerx.dif'; <> };
 
 #08
-is($diff, $results, 'Diff matches expected results');
+is($diff, $results, 'Diff matches expected results (diff)');
 
 my $el3 = VCS::Lite->new('data/marinery.txt');
-my $diff = $el1->diff($el3);	# old form of call
+$diff = $el1->diff($el3);	# old form of call
 
 #09
 ok($diff, 'Diff returns differences');
@@ -81,12 +76,12 @@ ok($diff, 'Diff returns differences');
 #print DIFF $diff;
 #close DIFF;
 
-my $results = do { local (@ARGV, $/) = 'data/marinery.dif'; <> }; # slurp entire file
+$results = do { local (@ARGV, $/) = 'data/marinery.dif'; <> };
 
 #10
-is($diff, $results, 'Diff matches expected results');
+is($diff, $results, 'Diff matches expected results (diff)');
 
-$udiff = $dt1->udiff;
+my $udiff = $dt1->udiff;
 
 #11
 ok($udiff, 'udiff returns differences');
@@ -96,7 +91,20 @@ ok($udiff, 'udiff returns differences');
 #print DIFF $udiff;
 #close DIFF;
 
-my $results = do { local (@ARGV, $/) = 'data/marinerx1.udif'; <> }; # slurp entire file
+$results = do { local (@ARGV, $/) = 'data/marinerx1.udif'; <> };
 
 #12
-is($udiff, $results, 'Diff matches expected results');
+is($udiff, $results, 'Diff matches expected results (udiff)');
+
+$dt1 = $el1->delta($el2, window => 3);
+$udiff = $dt1->udiff;
+
+$results = do { local (@ARGV, $/) = 'data/marinerx.udif'; <> };
+
+#13
+is($udiff, $results, 'Diff matches expected results (udiff, 3 window)');
+
+#Uncomment for debugging
+#open DIFF,'>diff4.out';
+#print DIFF $udiff;
+#close DIFF;

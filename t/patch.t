@@ -1,10 +1,5 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
 
-#########################
-
-# change 'tests => 1' to 'tests => last_test_to_print';
-
+use strict;
 use Test::More tests => 9;
 use VCS::Lite;
 
@@ -56,9 +51,9 @@ my $udiff = $dt2->udiff;
 ok($udiff, "udiff returns text");
 
 #Uncomment for debugging
-open PAT,'>patch2.out';
-print PAT $udiff;
-close PAT;
+#open PAT,'>patch2.out';
+#print PAT $udiff;
+#close PAT;
 
 my $results = do { local (@ARGV, $/) = 'data/marinerx.udif'; <> }; # slurp entire file
 

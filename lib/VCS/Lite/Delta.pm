@@ -2,7 +2,7 @@ package VCS::Lite::Delta;
 
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 NAME
 
@@ -25,11 +25,6 @@ VCS::Lite::Delta - VCS::Lite differences
   my $lit3 = $lit->patch($delt);
   print OUTFILE $lit3->text;
 
-  # merge
-
-  my $lit4 = $lit->merge($lit->delta($lit2),$lit->delta($lit3));
-  print OUTFILE $lit4->text;
-
 =head1 DESCRIPTION
 
 This module provides a Delta class for the differencing functionality of
@@ -38,7 +33,7 @@ VCS::Lite
 =head2 new
 
 The underlying object of VCS::Lite::Delta is an array of difference 
-chunks such as that returned by Algorithm::Diff. 
+chunks (hunks) such as that returned by Algorithm::Diff. 
 
 The constructor takes the following forms:
 
@@ -49,7 +44,12 @@ The constructor takes the following forms:
 
 $sep here is a regexp by which to split strings into tokens. 
 The default is to use the natural perl mechanism of $/ (which is emulated 
-when not reading from a file).  
+when not reading from a file). The arrayref form is assuming an array of 
+hunks such as the output from L<Algorithm::Diff::diff>.
+
+The other forms assume the input is the text form of a diff listing, 
+either in diff format, or in unified format. The input is parsed, and errors
+are reported.
 
 =head2 diff
 
@@ -61,6 +61,13 @@ This generates a standard diff format, for example:
 < Now wherefore stopp'st thou me?
 ---
 > Now wherefore stoppest thou me?
+
+=head2 udiff
+
+  print OUTFILE $delt->udiff
+
+This generates a unified diff (like diff -u) similar to the form in which
+patches are submitted.
 
 =head2 id
 
@@ -92,7 +99,7 @@ See the documentation on L<Algorithm::Diff> for more details of this structure.
 
 =head1 COPYRIGHT
 
-Copyright (c) Ivor Williams, 2003
+Copyright (c) Ivor Williams, 2003-2005
 
 =head1 LICENCE
 
@@ -116,16 +123,20 @@ sub new {
 # Case 0: string. Use $id as file name, becomes case 2
 	if (!ref $src) {
 		open my $fh,$src or croak("failed to open '$src': $!");
-		$src = $fh;
+		$src = $fh;  # becomes case 2 below
 	}
 	my $atyp = ref $src;
 
 # Case 1: $src is arrayref
-	return bless [$_[0],$_[1],@$src],$class if $atyp eq 'ARRAY';
+	return bless {
+		id1 => $_[0],
+		id2 => $_[1],
+		diff => [@$src] },$class if $atyp eq 'ARRAY';
 
 	my $sep = shift;
 	local $/ = $sep if $sep;
-	$sep ||= qr(^)m;
+	my $sep_re = $sep || qr(^)m;
+	$sep ||= '';
 	my @diff;
 
 # Case 2: $src is globref (file handle) - slurp file
@@ -146,7 +157,8 @@ sub new {
 # If we have reached this point, we have been passed something in a
 # text/diff format. It could be diff or udiff format.
 
-	my @out = @_[0,1];
+	my ($id1,$id2) = @_;
+	my @out;
 
 	if ($diff[0] =~ /^---/) {		# udiff format
 		my $state = 'inputdef';
@@ -157,10 +169,10 @@ sub new {
 # inputdef = --- and +++ to identify the files being diffed
 
 			if ($state eq 'inputdef') {
-				$out[0] = $1 if /^---	# ---
+				$id1 = $1 if /^---	# ---
 						\s
 						(\S+)/x;	# file => $1
-				$out[1] = $1 if /^\+{3}	# +++
+				$id2 = $1 if /^\+{3}	# +++
 						\s
 						(\S+)/x;	# file => $1
 				$state = 'patch' if /^\@\@/;
@@ -219,7 +231,10 @@ sub new {
 				}
 			}
 		} 	# next line of patch
-		return bless \@out, $class;
+		return bless {
+			id1 => $id1,
+			id2 => $id2,
+			diff => \@out }, $class;
 	}
 
 # not a udiff mode patch, assume straight diff mode
@@ -279,7 +294,10 @@ sub new {
 			}
 		}
 	}
-	return bless \@out, $class;
+	return bless {
+		id1 => $id1,
+		id2 => $id2,
+		diff => \@out }, $class;
 }
 
 # Error handling, use package vars to control it for now.
@@ -372,16 +390,14 @@ sub diff {
 
 # back to sub diff
 	
-	my ($id1,$id2,@d) = @$self;
-	
-	join '',map {diff_hunk($sep,\$off,@$_)} @d;
+	join '',map {diff_hunk($sep,\$off,@$_)} @{$self->{diff}};
 }
 
 sub udiff {
 	my $self = shift;
 	my $sep = shift || '';
 
-	my ($in,$out,@diff) = @$self;
+	my ($in,$out,$diff) = @{$self}{qw/id1 id2 diff/};
 
 # Header with file names
 
@@ -389,7 +405,7 @@ sub udiff {
 
 	my $offset = 0;
 
-	for (@diff) {
+	for (@$diff) {
 		my @t1 = grep {$_->[0] eq '-'} @$_;
 		my @t2 = grep {$_->[0] eq '+'} @$_;
 
@@ -442,18 +458,17 @@ sub id {
 	my $self = shift;
 
 	if (@_) { 
-	    $self->[0]=shift; 
-	    $self->[1]=shift;
+	    $self->{id1}=shift; 
+	    $self->{id2}=shift;
 	}
 
-	($self->[0],$self->[1]);
+	@{$self}{qw/id1 id2/};
 }
 
 sub hunks {
 	my $self = shift;
 
-	my (undef,undef,@hunks) = @$self;
-	@hunks;
+	@{$self->{diff}};
 }
 
 1;

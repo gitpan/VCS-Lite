@@ -1,8 +1,7 @@
-VCS/Lite version 0.02
+VCS/Lite version 0.06
 =====================
 
-This is the initial version of VCS::Lite. Algorithm::Diff needs to
-be installed first.
+Prerequisites:  Algorithm::Diff  (version 1.13 or later) 
 
 
 To install this module type the following:
@@ -12,6 +11,10 @@ To install this module type the following:
    make test
    make install
 
+Scripts:
+
+This module puts in place vldiff.pl, vlpatch.pl and vlmerge.pl.
+
 DEPENDENCIES
 
 This module requires these other modules and libraries:
@@ -20,8 +23,8 @@ This module requires these other modules and libraries:
 
 UPGRADING
 
-Note that the API has changed from previous versions. Please check that
-your code complies with the API described in the pod if upgrading.
+Note that the underlying object type has changed from an ARRAY to a HASH.
+
 
 COPYRIGHT AND LICENCE
 

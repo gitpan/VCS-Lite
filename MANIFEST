@@ -1,7 +1,7 @@
 Changes
-Lite.pm
 Makefile.PL
 MANIFEST
+META.yml
 README
 data/mariner.txt
 data/marinerx.dif
@@ -11,6 +11,7 @@ data/marinerx1.udif
 data/marinerxy.txt
 data/marinery.dif
 data/marinery.txt
+lib/VCS/Lite.pm
 lib/VCS/Lite/Delta.pm
 scripts/vldiff.pl
 scripts/vlmerge.pl

@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 NAME
 
@@ -128,7 +128,7 @@ insert the necessary text to highlight the conflict.
 
 =head1 COPYRIGHT
 
-Copyright (c) Ivor Williams, 2002-2003
+Copyright (c) Ivor Williams, 2002-2005
 
 =head1 LICENCE
 
@@ -154,52 +154,88 @@ sub new {
 	
 	my $atyp = ref $src;
 	local $/ = $sep if $sep;
-	$sep ||= qr(^)m;
+	my $sep_re = $sep || qr(^)m;
+	$sep ||= '';
+	my @contents;
 
 # Case 1: $src is string
-	return bless [$id,split $sep,$src] unless $atyp;
-
+	if (!$atyp) {
+	    @contents = split $sep_re,$src;
+	}
 # Case 2: $src is arrayref
-	return bless [$id,@$src],$class if $atyp eq 'ARRAY';
-
+	elsif ($atyp eq 'ARRAY') {
+	    @contents = @$src;
+	}
 # Case 3: $src is globref (file handle)
-	return bless [$id,<$src>],$class if $atyp eq 'GLOB';
-
+	elsif ($atyp eq 'GLOB') {
+	    @contents = <$src>;
+	}
 # Case 4: $src is coderef - callback
+	elsif ($atyp eq 'CODE') {
+	    while (my $item=&$src(@args)) {
+		push @contents,$item;
+	    }
+	}
 # Case otherwise is an error.
-	croak "Invalid argument" if $atyp ne 'CODE';
-	
-	my @temp = ($id);
-	while (my $item=&$src(@args)) {
-		push @temp,$item;
+	else {
+	    croak "Invalid argument";
 	}
 	
-	bless \@temp,$class;
+	bless { id => $id,
+		contents => \@contents,
+		separator => $sep },$class;
 }
 
 sub text {
 	my ($self,$sep) = @_;
 	
-	$sep ||= '';
+	$sep ||= $self->{separator};
 
-	my ($id,@text) = @$self;
-	
-	wantarray ? @text : join $sep,@text;
+	wantarray ? @{$self->{contents}} : join $sep,@{$self->{contents}};
 }
 
 sub id {
-	$_[0][0];
+	my $self = shift;
+
+	@_ ? ($self->{id} = shift) : $self->{id};
 }
 
 use VCS::Lite::Delta;
 
 sub delta {
-	my ($lite1,$lite2) = @_;
-
-	my @d = Algorithm::Diff::diff([$lite1->text],[$lite2->text])
+	my $lite1 = shift;
+	my $lite2 = shift;
+	my %par = @_;
+	
+	my @wl1 = $lite1->_window($par{window});
+	my @wl2 = $lite2->_window($par{window});
+	my @d = map { [map { [$_->[0], $_->[1],
+		ref($_->[2]) ? $_->[2]{line} : $_->[2]] } @$_ ] }
+	Algorithm::Diff::diff(\@wl1,\@wl2,sub { $_[0]{window}; })
 		or return undef;
 
 	VCS::Lite::Delta->new(\@d,$lite1->id,$lite2->id);
+}
+
+sub _window {
+	my $self = shift;
+
+	my $win = shift || 0;
+	my ($win_from,$win_to) = ref($win) ? (-$win->[0],$win->[1]) : 
+						(-$win,$win);
+	my @wintxt;
+	my $max = $#{$self->{contents}};
+	for (0..$max) {
+	    my $win_lb = $_ + $win_from;
+	    $win_lb = 0 if $win_lb < 0;
+	    my $win_ub = $_ + $win_to;
+	    $win_ub = $max if $win_ub > $max;
+	    push @wintxt, join $self->{separator}, 
+	    	@{$self->{contents}}[$win_lb .. $win_ub];
+	}
+
+	map { {line => $self->{contents}[$_], window => $wintxt[$_]} } 
+		(0..$max);
 }
 
 sub diff {
@@ -213,12 +249,10 @@ sub patch {
 	my $patch = shift;
 	$patch = VCS::Lite::Delta->new($patch,@_) 
 		unless ref $patch eq 'VCS::Lite::Delta';
-	my @out = @$self;
-	my $id = shift @out;
+	my @out = @{$self->{contents}};
+	my $id = $self->id;
 	my $pkg = ref $self;
-	my @pat = @$patch;
-	my @orig1 = shift @pat;
-	my @orig2 = shift @pat;
+	my @pat = $patch->hunks;
 
 	for (@pat) {
 		for (@$_) {
@@ -265,11 +299,11 @@ sub merge {
 	my $orig = [$self->text];
 	my $chg1 = [$d1->text];
 	my $chg2 = [$d2->text];
-	my $out_title = $d1->[0] . '|' . $d2->[0];
+	my $out_title = $d1->{id} . '|' . $d2->{id};
 	my %ins1;
 	my $del1 = '';
 
-	traverse_sequences( $self, $chg1, {
+	traverse_sequences( $self->{contents}, $chg1, {
 		MATCH => sub { $del1 .= ' ' },
 		DISCARD_A => sub { $del1 .= '-' },
 		DISCARD_B => sub { push @{$ins1{$_[0]}},$chg1->[$_[1]] },
@@ -278,7 +312,7 @@ sub merge {
 	my %ins2;
 	my $del2 = '';
 
-	traverse_sequences( $self, $chg2, {
+	traverse_sequences( $self->{contents}, $chg2, {
 		MATCH => sub { $del2 .= ' ' },
 		DISCARD_A => sub { $del2 .= '-' },
 		DISCARD_B => sub { push @{$ins2{$_[0]}},$chg2->[$_[1]] },
@@ -315,10 +349,10 @@ sub merge {
 
 	my @out;
 
-	for (0..@$self) {
+	for (0..@{$self->{contents}}) {
 
 # Get details pertaining to current @f0 input line 
-		my $line = $self->[$_];
+		my $line = $self->{contents}[$_];
 		my $d1 = substr $del1,$_,1;
 		my $ins1 = $ins1{$_} if exists $ins1{$_};
 		my $d2 = substr $del2,$_,1;
