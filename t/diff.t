@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 9;
+use Test::More tests => 12;
 use VCS::Lite;
 
 my $el1 = VCS::Lite->new('data/mariner.txt');
@@ -13,19 +13,51 @@ my $el1 = VCS::Lite->new('data/mariner.txt');
 #01
 isa_ok($el1,'VCS::Lite','Return from new, passed filespec');
 
+#02
+is($el1->id,'data/mariner.txt','Correct name returned by id');
+
 my $el2 = VCS::Lite->new('data/marinerx.txt');
 
-#02
+#03
 ok(!$el1->delta($el1),'Compare with same returns empty array');
 
 my $dt1 = $el1->delta($el2);
 
-#03
+#04
 isa_ok($dt1,'VCS::Lite::Delta','Delta return');
+
+#05
+my @id = $dt1->id;
+is_deeply(\@id,['data/mariner.txt',
+		'data/marinerx.txt'],
+		'id method of delta returns correct ids');
+
+#06
+my @hunks = $dt1->hunks;
+is_deeply(\@hunks,
+	[
+	    [
+	    	['-', 3, "Now wherefore stopp'st thou me?\n"],
+	    	['+', 3, "Now wherefore stoppest thou me?\n"],
+	    ],[
+	    	['-', 20, "The Wedding-Guest sat on a stone:\n"],
+	    	['-', 21, "He cannot chuse but hear;\n"],
+	    	['-', 22, "And thus spake on that ancient man,\n"],
+	    	['-', 23, "The bright-eyed Mariner.\n"],
+	    	['-', 24, "\n"],
+	    ],[
+	    	['+', 32, "Wondering about the wretched loon\n"],
+	    ],[
+	    	['-', 94, "Whiles all the night, through fog-smoke white,\n"],
+	    	['-', 95, "Glimmered the white Moon-shine.\n"],
+	    	['+', 90, "While all the night, through fog-smoke white,\n"],
+	    	['+', 91, "Glimmered the white Moonshine.\n"],
+	    ]
+	], 'Full comparison of hunks');
 
 my $diff = $dt1->diff;
 
-#04
+#07
 ok($diff, 'Diff returns differences');
 
 #Uncomment for debugging
@@ -35,13 +67,13 @@ ok($diff, 'Diff returns differences');
 
 my $results = do { local (@ARGV, $/) = 'data/marinerx.dif'; <> }; # slurp entire file
 
-#05
+#08
 is($diff, $results, 'Diff matches expected results');
 
 my $el3 = VCS::Lite->new('data/marinery.txt');
 my $diff = $el1->diff($el3);	# old form of call
 
-#06
+#09
 ok($diff, 'Diff returns differences');
 
 #Uncomment for debugging
@@ -51,12 +83,12 @@ ok($diff, 'Diff returns differences');
 
 my $results = do { local (@ARGV, $/) = 'data/marinery.dif'; <> }; # slurp entire file
 
-#07
+#10
 is($diff, $results, 'Diff matches expected results');
 
 $udiff = $dt1->udiff;
 
-#08
+#11
 ok($udiff, 'udiff returns differences');
 
 #Uncomment for debugging
@@ -66,5 +98,5 @@ ok($udiff, 'udiff returns differences');
 
 my $results = do { local (@ARGV, $/) = 'data/marinerx1.udif'; <> }; # slurp entire file
 
-#09
+#12
 is($udiff, $results, 'Diff matches expected results');

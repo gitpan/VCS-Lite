@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 NAME
 
@@ -92,6 +92,13 @@ In scalar context, returns the equivalent of the file contents slurped
 the strings together). In list context, returns the list of lines or
 records.
 
+=head2 id
+
+  my $fil = $lite->id
+
+Returns the name associated with the VCS::Lite element when it was created
+by new. This is usually the file name.
+
 =head2 delta
 
   my $delt = $lit->delta($lit2);
@@ -109,10 +116,10 @@ VCS::Lite object for the patched source.
 
 =head2 merge
 
-  my $lit4 = $lit->merge($delt1,$delt2,\&confl);
+  my $lit4 = $lit->merge($lit1,$lit2,\&confl);
 
 Performs the "parallelogram of merging". This applies two different
-change streams represented by VCS::Lite::Delta objects. Returns a VCS::Lite
+change streams represented by VCS::Lite objects. Returns a VCS::Lite
 object with both sets of changes merged.
 
 The third parameter to the method is a sub which is called whenever a

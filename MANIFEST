@@ -12,11 +12,9 @@ data/marinerxy.txt
 data/marinery.dif
 data/marinery.txt
 lib/VCS/Lite/Delta.pm
-newtest.pl
 scripts/vldiff.pl
 scripts/vlmerge.pl
 scripts/vlpatch.pl
 t/diff.t
-t/merge.t
 t/merge1.t
 t/patch.t

@@ -2,7 +2,7 @@ package VCS::Lite::Delta;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -61,6 +61,34 @@ This generates a standard diff format, for example:
 < Now wherefore stopp'st thou me?
 ---
 > Now wherefore stoppest thou me?
+
+=head2 id
+
+  my ($id1,$id2) = $delt->id;
+  $delt2->id('foo.pl@@1','foo.pl@@3')
+
+The I<id> method allows get and set of the names associated with the two 
+elements being diffed. The id is set for delta objects returned by 
+VCS::Lite->diff, to the element IDs of the VCS::Lite objects being diffed.
+
+Diff format omits the file names, hence the IDs will not be populated by
+new. This is not the case with diff -u format, which includes the file
+names which are passed in and available as IDs.
+
+=head2 hunks
+
+  my @hunklist = $delt->hunks
+
+A hunk is a technical term for a section of input containing a difference.
+Each hunk is an arrayref, containing the block of lines. Each line is 
+itself an arrayref, for example:
+
+  [
+    [ '+', 9, 'use Acme::Foo;'],
+    [ '-', 9, 'use Acme::Bar;'],
+  ]
+
+See the documentation on L<Algorithm::Diff> for more details of this structure.
 
 =head1 COPYRIGHT
 
@@ -410,85 +438,22 @@ sub udiff {
 	wantarray ? @out : join $sep,@out;
 }
 
-sub merge {
-	my $d1 = shift;
-	my $d2 = shift;
+sub id {
+	my $self = shift;
 
-	my $pkg = ref $d1;
-	$d2 = $pkg->new($d2,@_) unless ref $d2;
-
-	my ($d1_from,$d1_to,@d1) = @$d1;
-	my ($d2_from,$d2_to,@d2) = @$d2;
-
-	my $confl = shift || \&default_hlr;
-
-	my (%original,%changed);
-
-	for (@d1, @d2) {
-		if ($_->[0][0] eq '+') {
-			$changed{$_->[0][1]}++;
-			next;
-		}
-			
-		for (@$_) {
-			next unless $_->[0] eq '-';
-			$original{$_->[1]} = $_->[2];
-			$changed{$_->[1]}++;
-		}
+	if (@_) { 
+	    $self->[0]=shift; 
+	    $self->[1]=shift;
 	}
-	my @out;
-	my $o_from = ($d1_from eq $d2_from) ? $d1_from : "$d1_from|$d2_from";
-	my $o_to = "$d1_to|$d2_to";
 
-	my ($start,$end,$prev,$ifconf);
-
-	for (sort keys %changed) {
-		$prev ||= $_;
-		if ($prev != $_ - 1) {
-			push @out, $d1->_merge_hunk($d2,$start,$prev,\%original,
-				$ifconf,$confl)
-				if defined($start);
-			$start = $prev if $prev ne $_ - 1;
-		}
-		$ifconf++ if $changed{$_} > 1;
-	}
-	push @out, $d1->_merge_hunk($d2,$start,$prev,\%original,$ifconf,$confl);
-
-	$pkg->new(\@out,$o_from,$o_to);
+	($self->[0],$self->[1]);
 }
 
-sub _merge_hunk {
-	my ($delt1,$delt2,$from,$to,$orig,$conflict,$handler) = @_;
+sub hunks {
+	my $self = shift;
 
-	my ($d1f0,$d1f1,@d1) = @$delt1;
-	my ($d2f0,$d2f1,@d2) = @$delt2;
-
-	my @out;
-	my (@orig,@chg1,@chg2,@merged);
-	my ($cur1,$cur2);
-	#@d1 = map {@$_} @d1;
-	#@d2 = map {@$_} @d2;
-	my $off1 = 0;
-	my $off2 = 0;
-	for ($from..$to) {
-		while (@d1) {
-			$cur1 ||= shift @d1;
-			last if $cur1->[-1][1] >= $_;
-			$off1 += ($_->[0] eq '+') ? 1 : -1
-				for @$cur1;
-			$cur1 = shift @d1;
-		}
-	#	if ($cur1->[0][1] == $_) {
-			
-		while (@d2) {
-			$cur2 ||= shift @d2;
-			last if $cur2->[-1][1] >= $_;
-			$off2 += ($_->[0] eq '+') ? 1 : -1
-				for @$cur2;
-			$cur2 = shift @d2;
-		}
-		push @orig,$orig->{$_} if exists $orig->{$_};
-	}
+	my (undef,undef,@hunks) = @$self;
+	@hunks;
 }
-	
+
 1;

@@ -1,16 +1,23 @@
 Revision history for Perl extension VCS::Lite.
 
-0.01  Mon Dec 16 14:03:18 2002
-	- original version; created by h2xs 1.21 with options
-		-AX -n VCS::Lite
-
-0.02  Wed Dec 18 16:05:23 2002
-	- Original manifest was incomplete. This was uploaded to PAUSE
-
-0.03  Patched version supplied by Reuben Thomas
+0.05  Sun Dec 14 15:00:16 2003
+	- Resolve bugs reported on RT by removing merge method in 
+	  VCS::Lite::Delta and references to it. Remove merge.t, keep 
+	  merge1.t this eliminates the todo tests.
+	- Provide and document API calls VCS::Lite->id, VCS::Lite::Delta->id
+	  and VCS::Lite::Delta->hunks.
 
 0.04  Sun Apr 20 08:54:27 2003
 	- Redesign of API - split of module into VCS::Lite and VCS::Lite::Delta
 	- vldiff.pl, vlpatch.pl and vlmerge.pl scripts included in kit
 	- udiff (diff -u) capability added
 	- merge using new api incomplete (old merge still available)
+
+0.03  Patched version supplied by Reuben Thomas
+
+0.02  Wed Dec 18 16:05:23 2002
+	- Original manifest was incomplete. This was uploaded to PAUSE
+
+0.01  Mon Dec 16 14:03:18 2002
+	- original version; created by h2xs 1.21 with options
+		-AX -n VCS::Lite
