@@ -1,5 +1,16 @@
 Changes
 Lite.pm
+test.pl
 Makefile.PL
 MANIFEST
 README
+t/diff1.t
+t/diff2.t
+t/patch1.t
+t/merge1.t
+data/mariner.txt
+data/marinerx.txt
+data/marinery.txt
+data/marinerxy.txt
+data/marinerx.dif
+data/marinery.dif

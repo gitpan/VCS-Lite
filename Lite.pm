@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -50,10 +50,10 @@ for reasons which will become apparent,
 
 There are several forms of the parameter list that B<new> can take.
 
-my $lite = VCS::Lite->new( \@foo);				#Array ref
-my $lite = VCS::Lite->new( '/users/me/prog.pl',$sep);	#File name
-my $lite = VCS::Lite->new( $fh1,$sep);				#File handle
-my $lite = VCS::Lite->new( \&next, $p1, $p2...);	#Callback
+  my $lite = VCS::Lite->new( \@foo);			#Array ref
+  my $lite = VCS::Lite->new( '/users/me/prog.pl',$sep);	#File name
+  my $lite = VCS::Lite->new( $fh1,$sep);		#File handle
+  my $lite = VCS::Lite->new( \&next, $p1, $p2...);	#Callback
 
 In the Perl spirit of DWIM, new assumes that given an arrayref, 
 you have already done all the work of making your list of whatevers. 
@@ -66,9 +66,9 @@ default is to use $/.
 
 =head2 text
 
-my $foo = $lite->text;
-my $bar = $lit2->text('|');
-my @baz = $lit3->text
+  my $foo = $lite->text;
+  my $bar = $lit2->text('|');
+  my @baz = $lit3->text;
 
 In scalar context, returns the equivalent of the file contents slurped 
 (the optional separator parameter is used to join the strings together). 
@@ -76,7 +76,7 @@ In list context, returns the list of lines or records.
 
 =head2 save
 
-$lit3->save('~me/patched_file');
+  $lit3->save('~me/patched_file');
 
 Save is the reverse operation to new, given a file name or file 
 handle. The file is written out calling the object's serialize 
@@ -85,20 +85,20 @@ your own serializer.
 
 =head2 diff
 
-my $difftxt = $lit->diff($lit2);
+  my $difftxt = $lit->diff($lit2);
 
 Perform the difference between two VCS::Lite objects.
 
 Output is in ordinary diff format, e.g.:
 
-827c828
-<   my ($id, $name) = @_;
----
->   my ($id, $name, $prefix) = @_;
+  827c828
+  <   my ($id, $name) = @_;
+  ---
+  >   my ($id, $name, $prefix) = @_;
 
 =head2 patch
 
-my $lit3 = $lit->patch($fh3);
+  my $lit3 = $lit->patch($fh3);
 
 Applies a patch to a VCS::Lite object. Accepts a file handle or 
 file name string. Reads the file in diff format, and applies it. 
@@ -106,7 +106,7 @@ Returns a VCS::Lite object for the patched source.
 
 =head2 merge
 
-my $lit4 = $lit->merge($lit2,$lit3,\&confl);
+  my $lit4 = $lit->merge($lit2,$lit3,\&confl);
 
 Performs the "parallelogram of merging". This takes three VCS::Lite 
 objects - the base object and two change streams. Returns a 
