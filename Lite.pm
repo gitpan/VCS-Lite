@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.04';
 
 =head1 NAME
 
@@ -11,58 +11,75 @@ VCS::Lite - Minimal version control system
 =head1 SYNOPSIS
 
   use VCS::Lite;
-  
+
   # diff
-  
-  my $lit = VCS::Lite->new($fh1);
-  my $lit2 = VCS::Lite->new($fh2);
-  my $difftxt = $lit->diff($lit2);
+
+  my $lit = VCS::Lite->new('/home/me/foo1.txt');
+  my $lit2 = VCS::Lite->new('/home/me/foo2.txt');
+  my $difftxt = $lit->delta($lit2)->diff;
   print OUTFILE $difftxt;
-  
+
   # patch
-  
-  my $lit3 = $lit->patch($fh3);
-  $lit3->save('~me/patched_file');
-  
+
+  my $delt = VCS::Lite::Delta->new('/home/me/patch.diff');
+  my $lit3 = $lit->patch($delt);
+  print OUTFILE $lit3->text;
+
   # merge
-  
-  my $lit4 = $lit->merge($lit2,$lit3);
-  $lit4->save('~me/merged_file');
-  
+
+  my $lit4 = $lit->merge($lit->delta($lit2),$lit->delta($lit3));
+  print OUTFILE $lit4->text;
+
 =head1 DESCRIPTION
 
-This module provides the functions normally associated with a version 
-control system, but without needing or implementing a version control 
-system. Applications include wikis, document management systems and 
+This module provides the functions normally associated with a version
+control system, but without needing or implementing a version control
+system. Applications include wikis, document management systems and
 configuration management.
 
-It makes use of the module Algorithm::Diff. It provides the facility 
+It makes use of the module Algorithm::Diff. It provides the facility
 for basic diffing, patching and merging.
 
 =head2 new
 
-The underlying object of VCS::Lite is an array. The members of the 
-array can be anything that a scalar can represent (including references 
-to structures and objects). The default is for the object to hold 
-an array of scalars as strings corresponding to lines of text. If 
-you want other underlying types, it is normal to subclass VCS::Lite 
+The underlying object of VCS::Lite is an array. The members of the
+array can be anything that a scalar can represent (including
+references to structures and objects). The default is for the object
+to hold an array of scalars as strings corresponding to lines of text.
+If you want other underlying types, it is normal to subclass VCS::Lite
 for reasons which will become apparent,
 
-There are several forms of the parameter list that B<new> can take.
+The basic form of the constructor is as follows:
 
-  my $lite = VCS::Lite->new( \@foo);			#Array ref
-  my $lite = VCS::Lite->new( '/users/me/prog.pl',$sep);	#File name
-  my $lite = VCS::Lite->new( $fh1,$sep);		#File handle
-  my $lite = VCS::Lite->new( \&next, $p1, $p2...);	#Callback
+  my $lite = VCS::Lite->new( '/my/file');
 
-In the Perl spirit of DWIM, new assumes that given an arrayref, 
-you have already done all the work of making your list of whatevers. 
-Given a string (filename) or a file handle, the file is slurped, 
-reading each line of text into a member of the array. Given a 
-callback, the routine is called successively with arguments $p1, 
-$p2, etc. and is expected to return a scalar which is added (pushed 
-on) to the array. $sep is an optional input record separator regexp - the 
-default is to use $/.
+which slurps the file to make an object. The full form is as follows:
+
+  my $lite = VCS::Lite->new( $object_id, $separator, $source, ...);
+
+$object_id here is a string to identify what is being diffed, patched or
+merged, in the application's environment. 
+
+$separator here is a regexp by which to split strings into tokens. 
+The default is to use the natural perl mechanism of $/ (which is emulated 
+when not reading from a file).  The resulting VCS::Lite objects are 
+unchomped by default.
+
+$source if unspecified causes $object_id to be opened as a file and its
+entire contents read in. The alternative is to supply $source, which can
+be one of the following:
+
+  scalar - This is a string which is tokenized using $separator
+  arrayref - Array of tokens
+  filehandle or globref - contents of file are slurped
+  callback - This is called successively to obtain tokens until received undef.
+
+In the Perl spirit of DWIM, new assumes that given an arrayref, you
+have already done all the work of making your list of whatevers. Given
+a string (filename) or a file handle, the file is slurped, reading
+each line of text into a member of the array. Given a callback, the
+routine is called successively with arguments $p1, $p2, etc. and is
+expected to return a scalar which is added (pushed on) to the array.
 
 =head2 text
 
@@ -70,55 +87,46 @@ default is to use $/.
   my $bar = $lit2->text('|');
   my @baz = $lit3->text;
 
-In scalar context, returns the equivalent of the file contents slurped 
-(the optional separator parameter is used to join the strings together). 
-In list context, returns the list of lines or records.
+In scalar context, returns the equivalent of the file contents slurped
+(the optional separator parameter, defaulting to $_, is used to join
+the strings together). In list context, returns the list of lines or
+records.
 
-=head2 save
+=head2 delta
 
-  $lit3->save('~me/patched_file');
+  my $delt = $lit->delta($lit2);
 
-Save is the reverse operation to new, given a file name or file 
-handle. The file is written out calling the object's serialize 
-method for successive members. If you are subclassing, you can supply
-your own serializer.
-
-=head2 diff
-
-  my $difftxt = $lit->diff($lit2);
-
-Perform the difference between two VCS::Lite objects.
-
-Output is in ordinary diff format, e.g.:
-
-  827c828
-  <   my ($id, $name) = @_;
-  ---
-  >   my ($id, $name, $prefix) = @_;
+Perform the difference between two VCS::Lite objects. This object returns
+a L<VCS::Lite::Delta> object.
 
 =head2 patch
 
-  my $lit3 = $lit->patch($fh3);
+  my $lit3 = $lit->patch($delt);
 
-Applies a patch to a VCS::Lite object. Accepts a file handle or 
-file name string. Reads the file in diff format, and applies it. 
-Returns a VCS::Lite object for the patched source.
+Applies a patch to a VCS::Lite object. Accepts a file handle or file
+name string. Reads the file in diff format, and applies it. Returns a
+VCS::Lite object for the patched source.
 
 =head2 merge
 
-  my $lit4 = $lit->merge($lit2,$lit3,\&confl);
+  my $lit4 = $lit->merge($delt1,$delt2,\&confl);
 
-Performs the "parallelogram of merging". This takes three VCS::Lite 
-objects - the base object and two change streams. Returns a 
-VCS::Lite object with both sets of changes merged.
+Performs the "parallelogram of merging". This applies two different
+change streams represented by VCS::Lite::Delta objects. Returns a VCS::Lite
+object with both sets of changes merged.
 
-The third parameter to the method is a sub which is called 
-whenever a merge conflict occurs. This needs to either resolve the 
-conflict or insert the necessary text to highlight the conflict.
+The third parameter to the method is a sub which is called whenever a
+merge conflict occurs. This needs to either resolve the conflict or
+insert the necessary text to highlight the conflict.
 
-=head1 AUTHOR
+=head1 COPYRIGHT
 
-I. P. Williams, E<lt>Ivor dot williams (at) tiscali dot co dot United KingdomE<gt>
+Copyright (c) Ivor Williams, 2002-2003
+
+=head1 LICENCE
+
+You may use, modify and distribute this module under the same terms 
+as Perl itself.
 
 =head1 SEE ALSO
 
@@ -130,24 +138,32 @@ use Carp;
 use Algorithm::Diff qw(traverse_sequences);
 
 sub new {
-	my $class = shift;
-	my $arg = shift;
-	my $atyp = ref $arg;
+	my ($class,$id,$sep,$src,@args) = @_;
+
+# DWIM logic, based on $src parameter.
+
+# Case 0: $src missing. Use $id as file name, becomes case 3
+	open $src,$id or croak("failed to open '$id': $!") unless $src;
 	
-	return bless [@$arg],$class if $atyp eq 'ARRAY';
-	unless ($atyp) {
-		open my $fh,$arg or croak("failed to open '$arg': $!");
-		$arg = $fh;
-	}
-	
-	return bless [<$arg>],$class if ref($arg) eq 'GLOB';
-	
+	my $atyp = ref $src;
+	local $/ = $sep if $sep;
+	$sep ||= qr(^)m;
+
+# Case 1: $src is string
+	return bless [$id,split $sep,$src] unless $atyp;
+
+# Case 2: $src is arrayref
+	return bless [$id,@$src],$class if $atyp eq 'ARRAY';
+
+# Case 3: $src is globref (file handle)
+	return bless [$id,<$src>],$class if $atyp eq 'GLOB';
+
+# Case 4: $src is coderef - callback
+# Case otherwise is an error.
 	croak "Invalid argument" if $atyp ne 'CODE';
 	
-	local $/ = shift if @_;
-	
-	my @temp;
-	while (my $item=&$arg(@_)) {
+	my @temp = ($id);
+	while (my $item=&$src(@args)) {
 		push @temp,$item;
 	}
 	
@@ -158,83 +174,70 @@ sub text {
 	my ($self,$sep) = @_;
 	
 	$sep ||= '';
+
+	my ($id,@text) = @$self;
 	
-	wantarray ? @$self : join $sep,@$self;
+	wantarray ? @text : join $sep,@text;
 }
 
+sub id {
+	$_[0][0];
+}
+
+use VCS::Lite::Delta;
+
+sub delta {
+	my ($lite1,$lite2) = @_;
+
+	my @d = Algorithm::Diff::diff([$lite1->text],[$lite2->text])
+		or return undef;
+
+	VCS::Lite::Delta->new(\@d,$lite1->id,$lite2->id);
+}
 
 sub diff {
-	my ($lite1,$lite2,$sep) = @_;
-	
-	$sep ||= '';
-	my $off = 0;
+	my $self = shift;
 
-	sub diff_hunk {
-
-		my $sep = shift;
-		my $r_line_offset = shift;
-		
-		my @ins;
-		my ($ins_firstline,$ins_lastline) = (0,0);
-		my @del;
-		my ($del_firstline,$del_lastline) = (0,0);
-		my $op;
-
-		for (@_) {
-			my ($typ,$lno,$txt) = @$_;
-			$lno++;
-			if ($typ eq '+') {
-				push @ins,$txt;
-				$ins_firstline ||= $lno;
-				$ins_lastline = $lno;
-			} else {
-				push @del,$txt;
-				$del_firstline ||= $lno;
-				$del_lastline = $lno;
-			}
-		}
-		
-		if (!@del) {
-			$op = 'a';
-			$del_firstline = $ins_firstline - $$r_line_offset - 1;
-		} elsif (!@ins) {
-			$op = 'd';
-			$ins_firstline = $del_firstline + $$r_line_offset - 1;
-		} else {
-			$op = 'c';
-		}
-		
-		$$r_line_offset += @ins - @del;
-		
-		$ins_lastline ||= $ins_firstline;
-		$del_lastline ||= $del_firstline;
-		
-		my $outstr = "$del_firstline,$del_lastline$op$ins_firstline,$ins_lastline\n";
-		$outstr =~ s/(^|\D)(\d+),\2(?=\D|$)/$1$2/g;
-		for (@del) {
-			$outstr .= '< ' . $_ . $sep;
-		}
-		
-		$outstr .= "---\n" if @ins && @del;
-		
-		for (@ins) {
-			$outstr .= '> ' . $_ . $sep;
-		}
-	
-		$outstr;
-	}
-
-	
-	my @d = Algorithm::Diff::diff($lite1,$lite2);
-	
-	join '',map {diff_hunk($sep,\$off,@$_)} @d;
+	$self->delta(@_)->diff;
 }
 
 sub patch {
-	my ($self,$fil) = @_;
+	my $self = shift;
+	my $patch = shift;
+	$patch = VCS::Lite::Delta->new($patch,@_) 
+		unless ref $patch eq 'VCS::Lite::Delta';
 	my @out = @$self;
+	my $id = shift @out;
 	my $pkg = ref $self;
-	my $atyp = ref $fil;
+	my @pat = @$patch;
+	my @orig1 = shift @pat;
+	my @orig2 = shift @pat;
+
+	for (@pat) {
+		for (@$_) {
+			my ($ind,$lin,$txt) = @$_;
+			next unless $ind eq '-';
+			_error($lin,'Patch failed'),return undef
+				if $out[$lin] ne $txt;
+		}
+	}
+
+	my $line_offset = 0;
+
+	for (@pat) {
+		my @txt1 = grep {$_->[0] eq '-'} @$_;
+		my @txt2 = grep {$_->[0] eq '+'} @$_;
+		my $base_line = @txt2 ? $txt2[0][1] : $txt1[0][1] + $line_offset;
+		splice @out,$base_line,scalar(@txt1),map {$_->[2]} @txt2;
+		$line_offset += @txt2 - @txt1;
+	}
+
+	$pkg->new($id,'',\@out);
+}
+
+sub merge {
+	my ($self,$d1,$d2) = @_;
+	my $pkg = ref $self;
 
 	# Equality of two array references (contents)
 	
@@ -252,66 +255,10 @@ sub patch {
 		1;
 	}
 
-	unless ($atyp) {
-		open my $fh,$fil or croak("failed to open '$fil': $!");
-		$fil = $fh;
-	}
-	
-	while (<$fil>) {
-		/^(\d+)(?:,(\d+))?([acd])(\d+)(?:,(\d+))?$/ or 
-			croak "Incorrect syntax for patch, line $.";
-		my $from_a = $1;
-		my $to_a = $2 || $1;
-		my $from_b = $4;
-		my $to_b = $5 || $4;
-		my $op = $3;
-		my @ins;
-		if ($op eq 'a') {
-			for ($from_b .. $to_b) {
-				my $lin = <$fil>;
-				croak "Incorrect syntax for patch, line $." unless $lin =~ s/^> //;
-				push @ins,$lin;
-			}
-			
-			splice @out,$from_b - 1,0,@ins;
-			next;
-		}
-		
-		if ($op eq 'd') {
-			for ($from_a .. $to_a) {
-				my $lin = <$fil>;
-				croak "Incorrect syntax for patch, line $." unless $lin =~ s/^< //;
-				croak "Patch failed at line $." if $lin ne $out[$from_b];
-				splice @out,$from_b,1;
-			}
-			next;
-		}
-		
-		if ($op eq 'c') {
-			for ($from_a .. $to_a) {
-				my $lin = <$fil>;
-				croak "Incorrect syntax for patch, line $." unless $lin =~ s/^< //;
-				croak "Patch failed at line $." if $lin ne $out[$from_b-1];
-				splice @out,$from_b-1,1;
-			}
-			croak "Incorrect syntax for patch, line $." unless <$fil> =~ /^---/;
-			for ($from_b .. $to_b) {
-				my $lin = <$fil>;
-				croak "Incorrect syntax for patch, line $." unless $lin =~ s/^> //;
-				push @ins,$lin;
-			}
-			
-			splice @out,$from_b - 1,0,@ins;
-		}
-	}
-	$pkg->new(\@out);
-}
-
-sub merge {
-	my ($self,$chg1,$chg2) = @_;
-	my $pkg = ref $self;
-
-
+	my $orig = [$self->text];
+	my $chg1 = [$d1->text];
+	my $chg2 = [$d2->text];
+	my $out_title = $d1->[0] . '|' . $d2->[0];
 	my %ins1;
 	my $del1 = '';
 
@@ -444,8 +391,9 @@ sub merge {
 		last unless defined $line;	# for end of file, don't want to push undef
 		push @out, $line unless ($d1 eq '-' || $d2 eq '-') && !$conflict_type;
 	}
-	$pkg->new(\@out);
+	$pkg->new($out_title, undef, \@out);
 }
 
+sub _error {};
 
 1;

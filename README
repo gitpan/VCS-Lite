@@ -18,6 +18,11 @@ This module requires these other modules and libraries:
 
   Algorithm::Diff
 
+UPGRADING
+
+Note that the API has changed from previous versions. Please check that
+your code complies with the API described in the pod if upgrading.
+
 COPYRIGHT AND LICENCE
 
 Copyright (C) 2003 Ivor Williams
