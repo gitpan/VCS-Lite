@@ -1,0 +1,6 @@
+Revision history for Perl extension VCS::Lite.
+
+0.01  Mon Dec 16 14:03:18 2002
+	- original version; created by h2xs 1.21 with options
+		-AX -n VCS::Lite
+
