@@ -28,7 +28,7 @@ Note that the underlying object type has changed from an ARRAY to a HASH.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Ivor Williams
+Copyright (C) 2003-2006 Ivor Williams
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 

@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 NAME
 
@@ -42,12 +42,10 @@ for basic diffing, patching and merging.
 
 =head2 new
 
-The underlying object of VCS::Lite is an array. The members of the
-array can be anything that a scalar can represent (including
+The underlying storage concept of VCS::Lite is an array. The members 
+of the array can be anything that a scalar can represent (including
 references to structures and objects). The default is for the object
 to hold an array of scalars as strings corresponding to lines of text.
-If you want other underlying types, it is normal to subclass VCS::Lite
-for reasons which will become apparent,
 
 The basic form of the constructor is as follows:
 
@@ -55,34 +53,71 @@ The basic form of the constructor is as follows:
 
 which slurps the file to make an object. The full form is as follows:
 
-  my $lite = VCS::Lite->new( $object_id, $separator, $source, ...);
+  my $lite = VCS::Lite->new( $object_id, $separation, $source, ...);
 
-$object_id here is a string to identify what is being diffed, patched or
-merged, in the application's environment. 
+=over 4
 
-$separator here is a regexp by which to split strings into tokens. 
-The default is to use the natural perl mechanism of $/ (which is emulated 
-when not reading from a file).  The resulting VCS::Lite objects are 
-unchomped by default.
+=item C<$object_id>
 
-$source if unspecified causes $object_id to be opened as a file and its
+This is a string to identify what is being diffed, patched or
+merged, in the application's environment. If there is no $source, this 
+is used as a filename from which to read the content.
+
+=item C<$separation>
+
+This is an optional parameter, which can be used via $/ to split the input
+file into tokens. The default is for lines of text. If you pass in a string
+to be tokenized, this will use $sep as a regular expression
+
+$separation can be a scalar or scalar ref, where this is used to break
+up the input stream. All values permitted for $/ are allowed (see L<perlvar>).
+
+$separation can also be a hashref, to give a finer level of control. For example:
+
+  {  in => '\n',
+     out => '\n',
+     chomp => 1 }
+
+'in' is the input record separator to use (the same as you would pass as $sep).
+Note that all values allowed for $/, and indeed the value of $/ passed in is
+what is used as a default. 'in' can be a string or a regexp.
+
+'out' is the character used on joining the members to output the results (text
+method in scalar context). This is the output record separator $\. Note that
+'out' defaults differently depening on the setting of 'chomp': if 'chomp' is
+off, 'out' will default to the empty string, or rather the passed in value of
+$\. If 'chomp' is on, 'out' will default to 'in' - note that you should 
+specify 'out' explicitly if you are using a regexp for 'in'.
+
+If the 'chomp' flag is set, the text matching 'in' is removed from the input
+lines as they are read. 'chomp' is not on by default, as this is new 
+functionality in release 0.08.
+
+=item C<$source> 
+
+if unspecified causes $object_id to be opened as a file and its
 entire contents read in. The alternative is to supply $source, which can
 be one of the following:
 
 =over 4
 
-=item *
+=item C<scalar>
 
-scalar - This is a string which is tokenized using $separator
+This is a string which is tokenized using $separation
 
-=item *
-arrayref - Array of tokens
+=item C<arrayref>
 
-=item *
-filehandle or globref - contents of file are slurped
+Array of tokens
 
-=item *
-callback - This is called successively to obtain tokens until received undef.
+=item C<filehandle> or C<globref>
+
+Contents of file are slurped
+
+=item C<callback>
+
+This is called successively to obtain tokens until received undef.
+
+=back
 
 =back
 
@@ -113,6 +148,11 @@ optionally specify a base version, which can be the string 'original',
 'contents' (the default) or a VCS::Lite object whose contents will be used.
 This corresponds to the "common ancestor" in version control systems.
 
+=head2 original
+
+This returns a VCS::Lite object for the original version, before changes were
+applied with apply.
+
 =head2 text
 
   my $foo = $lite->text;
@@ -120,7 +160,7 @@ This corresponds to the "common ancestor" in version control systems.
   my @baz = $lit3->text;
 
 In scalar context, returns the equivalent of the file contents slurped
-(the optional separator parameter, defaulting to $_, is used to join
+(the optional separation parameter, defaulting to $_, is used to join
 the strings together). In list context, returns the list of lines or
 records.
 
@@ -137,6 +177,11 @@ by new. This is usually the file name.
 
 Perform the difference between two VCS::Lite objects. This object returns
 a L<VCS::Lite::Delta> object.
+
+=head2 diff
+
+This is for backward compatibility with early versions. $lite->diff($lite2) is 
+equivalent to $lite->delta($lite2)->diff.
 
 =head2 patch
 
@@ -160,12 +205,17 @@ insert the necessary text to highlight the conflict.
 
 =head1 COPYRIGHT
 
-Copyright (c) Ivor Williams, 2002-2005
+Copyright (c) Ivor Williams, 2002-2006
 
 =head1 LICENCE
 
 You may use, modify and distribute this module under the same terms 
 as Perl itself.
+
+=head1 ACKNOWLEDGEMENTS
+
+Colin Robertson for suggesting and providing patches for support of
+files with unterminated last lines.
 
 =head1 SEE ALSO
 
@@ -179,20 +229,31 @@ use Algorithm::Diff qw(traverse_sequences);
 sub new {
 	my ($class,$id,$sep,$src,@args) = @_;
 
+	my %proto = ();
+
+# Decode $sep as needed
+
+	if (ref($sep) eq 'HASH') {
+	    %proto = %$sep;
+	    $sep = $proto{in};
+        delete $proto{in};
+	}
+	
 # DWIM logic, based on $src parameter.
 
 # Case 0: $src missing. Use $id as file name, becomes case 3
 	open $src,$id or croak("failed to open '$id': $!") unless $src;
 	
 	my $atyp = ref $src;
+    $sep ||= $/;
 	local $/ = $sep if $sep;
-	my $sep_re = $sep || qr(^)m;
-	$sep ||= '';
+    $proto{out} ||= $\ || '';
+	my $out_sep = $proto{out};
 	my @contents;
 
 # Case 1: $src is string
 	if (!$atyp) {
-	    @contents = split $sep_re,$src;
+	    @contents = split /(?=$sep)/,$src;
 	}
 # Case 2: $src is arrayref
 	elsif ($atyp eq 'ARRAY') {
@@ -213,9 +274,18 @@ sub new {
 	    croak "Invalid argument";
 	}
 	
+	$proto{last_line_short} = 1 
+		if @contents && ($contents[-1] !~ /$sep$/); 
+		
+	if ($proto{chomp}) {
+		s/$sep$//s for @contents;
+        $proto{out} ||= $sep;
+	}
+	
 	bless { id => $id,
 		contents => \@contents,
-		separator => $sep },$class;
+		separator => $sep,
+		%proto },$class;
 }
 
 sub original {
@@ -226,7 +296,10 @@ sub original {
 	exists($self->{original}) ?
 		bless ({ id => $self->id,
 			contents => $self->{original},
-			separator => $self->{separator}}, $pkg ) :
+			separator => $self->{separator},
+            out => $self->{out},
+            chomp => $self->{chomp},
+            }, $pkg ) :
 		$self;
 }
 
@@ -250,7 +323,7 @@ sub apply {
 sub text {
 	my ($self,$sep) = @_;
 	
-	$sep ||= $self->{separator};
+	$sep ||= $self->{out} || '';
 
 	wantarray ? @{$self->{contents}} : join $sep,@{$self->{contents}};
 }
@@ -270,12 +343,12 @@ sub delta {
 	
 	my @wl1 = $lite1->_window($par{window});
 	my @wl2 = $lite2->_window($par{window});
-	my @d = map { [map { [$_->[0], $_->[1],
-		ref($_->[2]) ? $_->[2]{line} : $_->[2]] } @$_ ] }
+	my @d = map { [map { [$_->[0] . ($_->[2]{short} ? '/' : ''), 
+        $_->[1], $_->[2]{line} ] } @$_ ] }
 	Algorithm::Diff::diff(\@wl1,\@wl2,sub { $_[0]{window}; })
 		or return undef;
 
-	VCS::Lite::Delta->new(\@d,$lite1->id,$lite2->id);
+	VCS::Lite::Delta->new(\@d,$lite1->id,$lite2->id,$lite1->{out});
 }
 
 sub _window {
@@ -291,11 +364,16 @@ sub _window {
 	    $win_lb = 0 if $win_lb < 0;
 	    my $win_ub = $_ + $win_to;
 	    $win_ub = $max if $win_ub > $max;
-	    push @wintxt, join $self->{separator}, 
-	    	@{$self->{contents}}[$win_lb .. $win_ub];
+	    push @wintxt, join $self->{out}, 
+	    	(@{$self->{contents}}[$win_lb .. $win_ub],
+		(($win_ub < $max) || !$self->{last_line_short}) ?
+		'' : ());
 	}
 
-	map { {line => $self->{contents}[$_], window => $wintxt[$_]} } 
+	map { {line => $self->{contents}[$_], 
+        window => $wintxt[$_],
+        ( $self->{last_line_short} && ($_ == $max)) ? ( short => 1 ) : (),
+        } }
 		(0..$max);
 }
 
@@ -318,32 +396,35 @@ sub patch {
 	for (@pat) {
 		for (@$_) {
 			my ($ind,$lin,$txt) = @$_;
-			next unless $ind eq '-';
+			next unless $ind =~ /^-/;
 			_error($lin,'Patch failed'),return undef
 				if $out[$lin] ne $txt;
 		}
 	}
 
 	my $line_offset = 0;
-
+    my $lls = 0;
+    
 	for (@pat) {
-		my @txt1 = grep {$_->[0] eq '-'} @$_;
-		my @txt2 = grep {$_->[0] eq '+'} @$_;
+		my @txt1 = grep {$_->[0] =~ /^\-/} @$_;
+		my @txt2 = grep {$_->[0] =~ /^\+/} @$_;
 		my $base_line = @txt2 ? $txt2[0][1] : $txt1[0][1] + $line_offset;
 		splice @out,$base_line,scalar(@txt1),map {$_->[2]} @txt2;
 		$line_offset += @txt2 - @txt1;
+        $lls += grep {$_->[0] eq '+/'} @txt2;
 	}
 
-	$pkg->new($id,'',\@out);
+	$pkg->new($id,{
+        in => $self->{separator},
+        chomp => $self->{chomp},
+        out => $self->{out},
+        last_line_short => $lls,
+        },\@out);
 }
-
-sub merge {
-	my ($self,$d1,$d2) = @_;
-	my $pkg = ref $self;
 
 	# Equality of two array references (contents)
 	
-	sub equal
+	sub _equal
 	{
 		my ($a,$b) = @_;
 	
@@ -356,6 +437,10 @@ sub merge {
 	
 		1;
 	}
+
+sub merge {
+	my ($self,$d1,$d2) = @_;
+	my $pkg = ref $self;
 
 	my $orig = [$self->text];
 	my $chg1 = [$d1->text];
@@ -421,7 +506,7 @@ sub merge {
 
 # Insert/insert conflict. This is not a conflict if both inserts are identical.
 
-		if ($ins1 && $ins2 && !&equal($ins1,$ins2)) {
+		if ($ins1 && $ins2 && !&_equal($ins1,$ins2)) {
 			push @out, ('*'x20)."Start of conflict ".(++$conflict).
 			"  Insert to Primary, Insert to Secondary ".('*'x60)."\n";
 

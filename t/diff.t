@@ -1,7 +1,9 @@
 
 use strict;
-use Test::More tests => 13;
+use Test::More tests => 17;
 use VCS::Lite;
+
+my $save_output = $ENV{VCS_LITE_KEEP_OUTPUT};
 
 my $el1 = VCS::Lite->new('data/mariner.txt');
 
@@ -55,45 +57,62 @@ my $diff = $dt1->diff;
 #07
 ok($diff, 'Diff returns differences');
 
-#Uncomment for debugging
-#open DIFF,'>diff1.out';
-#print DIFF $diff;
-#close DIFF;
+if ($save_output) {
+    open (my $dfh, '>', 'diff1.out')
+        or die "Failed to write output: $!";
+    print $dfh $diff;
+}
 
 my $results = do { local (@ARGV, $/) = 'data/marinerx.dif'; <> };
 
 #08
 is($diff, $results, 'Diff matches expected results (diff)');
 
+my $el1c = VCS::Lite->new('data/mariner.txt', { chomp => 1 } );
+my $el2c = VCS::Lite->new('data/marinerx.txt', { chomp => 1 } );
+my $dt1c = $el1c->delta($el2c);
+$diff = $dt1c->diff;
+
+if ($save_output) {
+    open (my $dfh, '>', 'diff1c.out')
+        or die "Failed to write output: $!";
+    print $dfh $diff;
+}
+
+#09
+is($diff, $results, 'Chomped mode: diff matches expected results');
+
 my $el3 = VCS::Lite->new('data/marinery.txt');
 $diff = $el1->diff($el3);	# old form of call
 
-#09
+#10
 ok($diff, 'Diff returns differences');
 
-#Uncomment for debugging
-#open DIFF,'>diff2.out';
-#print DIFF $diff;
-#close DIFF;
+if ($save_output) {
+    open (my $dfh, '>', 'diff2.out')
+        or die "Failed to write output: $!";
+    print $dfh $diff;
+}
 
 $results = do { local (@ARGV, $/) = 'data/marinery.dif'; <> };
 
-#10
+#11
 is($diff, $results, 'Diff matches expected results (diff)');
 
 my $udiff = $dt1->udiff;
 
-#11
+#12
 ok($udiff, 'udiff returns differences');
 
-#Uncomment for debugging
-#open DIFF,'>diff3.out';
-#print DIFF $udiff;
-#close DIFF;
+if ($save_output) {
+    open (my $dfh, '>', 'diff3.out')
+        or die "Failed to write output: $!";
+    print $dfh $udiff;
+}
 
 $results = do { local (@ARGV, $/) = 'data/marinerx1.udif'; <> };
 
-#12
+#13
 is($udiff, $results, 'Diff matches expected results (udiff)');
 
 $dt1 = $el1->delta($el2, window => 3);
@@ -101,10 +120,40 @@ $udiff = $dt1->udiff;
 
 $results = do { local (@ARGV, $/) = 'data/marinerx.udif'; <> };
 
-#13
+#14
 is($udiff, $results, 'Diff matches expected results (udiff, 3 window)');
 
-#Uncomment for debugging
-#open DIFF,'>diff4.out';
-#print DIFF $udiff;
-#close DIFF;
+$dt1c = $el1c->delta($el2c, window => 3);
+$udiff = $dt1c->udiff;
+
+#15
+is($udiff, $results, 'Chomped diff matches expected results (udiff, 3 window)');
+
+if ($save_output) {
+    open (my $dfh, '>', 'diff4.out')
+        or die "Failed to write output: $!";
+    print $dfh $udiff;
+}
+
+#Test with no newline at end of file
+my $el4 = VCS::Lite->new('data/snarka.txt');
+my $el5 = VCS::Lite->new('data/snarkb.txt');
+my $dt2 = $el4->delta($el5);
+
+$results = do { local (@ARGV, $/) = 'data/snarkab.dif'; <> };
+$diff = $dt2->diff;
+
+#16
+is($diff, $results, 'Diff matches expected results (diff)');
+
+$results = do { local (@ARGV, $/) = 'data/snarkab.udif'; <> };
+$udiff = $dt2->udiff;
+
+#17
+is($udiff, $results, 'Diff matches expected results (udiff)');
+
+if ($save_output) {
+    open (my $dfh, '>', 'diff5.out')
+        or die "Failed to write output: $!";
+    print $dfh $udiff;
+}

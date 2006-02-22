@@ -1,5 +1,10 @@
 Revision history for Perl extension VCS::Lite.
 
+0.08  Wed Feb 22 2006
+    - Rationalise end of line termination. Allow passing in a hashref for $sep
+      implement chomp mode.
+    - Add support for diff and patch of files with an unterminated last line.
+    
 0.07  Sun Apr 03 2005
 	- Fix script errors in vldiff.pl and vlpatch.pl
 	- Lose the .pl in the script names.

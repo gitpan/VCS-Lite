@@ -12,6 +12,10 @@ data/marinerxy.txt
 data/marinery.dif
 data/marinery.txt
 data/marinerz.txt
+data/snarka.txt
+data/snarkb.txt
+data/snarkab.dif
+data/snarkab.udif
 lib/VCS/Lite.pm
 lib/VCS/Lite/Delta.pm
 scripts/vldiff
@@ -21,3 +25,5 @@ t/diff.t
 t/merge.t
 t/merge1.t
 t/patch.t
+t/pod.t
+t/pod_coverage.t
