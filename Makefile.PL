@@ -1,12 +1,17 @@
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+
 WriteMakefile(
-    NAME		=> 'VCS::Lite',
+    NAME		    => 'VCS::Lite',
     VERSION_FROM	=> 'lib/VCS/Lite.pm', 
-    PREREQ_PM		=> {Algorithm::Diff => 1.13}, 
+    PREREQ_PM		=> {
+        Algorithm::Diff => 1.13,
+        Carp            => 0,
+
+        Getopt::Long    => 0        # required by installed scripts
+    }, 
     ABSTRACT_FROM	=> 'lib/VCS/Lite.pm', 
-    AUTHOR     		=> 'Ivor Williams <IVORW@cpan.org>',
+    AUTHOR     		=> 'Barbie <BARBIE@cpan.org>',
     EXE_FILES		=> [qw( 
     	scripts/vldiff scripts/vlpatch scripts/vlmerge)],
+	NO_META		=> 1,
 );

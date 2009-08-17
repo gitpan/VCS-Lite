@@ -1,11 +1,36 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         VCS-Lite
-version:      0.08
-version_from: lib/VCS/Lite.pm
-installdirs:  site
-requires:
-    Algorithm::Diff:               1.13
+--- #YAML:1.0
+name:                 VCS-Lite
+version:              0.09
+abstract:             TT wrapper for Text::WikiFormat
+distribution_type:    module
+installdirs:          site
+license:              perl
+author:
+    - Barbie (barbie@cpan.org)
 
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+requires:
+  Algorithm::Diff:          1.13
+  Carp:                     0
+  Getopt::Long:             0
+recommends:
+  Test::More:               0.45
+  Test::Pod:                1.00
+  Test::Pod::Coverage:      0.08
+  Test::CPAN::Meta:         0.12
+build_requires:
+  Test::More:               0.45
+
+provides:
+  VCS::Lite:
+    file:     lib/VCS/Lite.pm
+    version:  0.09
+no_index:
+  directory:
+    - t
+    - examples
+
+meta-spec:
+   version:   1.4
+   url:       http://module-build.sourceforge.net/META-spec-v1.4.html
+generated_by: Hand 1.0
+

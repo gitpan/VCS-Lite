@@ -2,7 +2,9 @@ package VCS::Lite::Delta;
 
 use strict;
 use warnings;
-our $VERSION = '0.04';
+our $VERSION = '0.09';
+
+#----------------------------------------------------------------------------
 
 =head1 NAME
 
@@ -30,89 +32,26 @@ VCS::Lite::Delta - VCS::Lite differences
 This module provides a Delta class for the differencing functionality of
 VCS::Lite
 
-=head2 new
-
-The underlying object of VCS::Lite::Delta is an array of difference 
-chunks (hunks) such as that returned by Algorithm::Diff. 
-
-The constructor takes the following forms:
-
-  my $delt = VCS::Lite::Delta->new( '/my/file.diff',$sep); # File name
-  my $delt = VCS::Lite::Delta->new( \*FILE,$sep);	# File handle
-  my $delt = VCS::Lite::Delta->new( \$string,$sep); # String as scalar ref
-  my $delt = VCS::Lite::Delta->new( \@foo, $id1, $id2) # Array ref
-
-$sep here is a regexp by which to split strings into tokens. 
-The default is to use the natural perl mechanism of $/ (which is emulated 
-when not reading from a file). The arrayref form is assuming an array of 
-hunks such as the output from L<Algorithm::Diff::diff>.
-
-The other forms assume the input is the text form of a diff listing, 
-either in diff format, or in unified format. The input is parsed, and errors
-are reported.
-
-=head2 diff
-
-  print OUTFILE $delt->diff
-
-This generates a standard diff format, for example:
-
-4c4
-< Now wherefore stopp'st thou me?
----
-> Now wherefore stoppest thou me?
-
-=head2 udiff
-
-  print OUTFILE $delt->udiff
-
-This generates a unified diff (like diff -u) similar to the form in which
-patches are submitted.
-
-=head2 id
-
-  my ($id1,$id2) = $delt->id;
-  $delt2->id('foo.pl@@1','foo.pl@@3')
-
-The I<id> method allows get and set of the names associated with the two 
-elements being diffed. The id is set for delta objects returned by 
-VCS::Lite->diff, to the element IDs of the VCS::Lite objects being diffed.
-
-Diff format omits the file names, hence the IDs will not be populated by
-new. This is not the case with diff -u format, which includes the file
-names which are passed in and available as IDs.
-
-=head2 hunks
-
-  my @hunklist = $delt->hunks
-
-A hunk is a technical term for a section of input containing a difference.
-Each hunk is an arrayref, containing the block of lines. Each line is 
-itself an arrayref, for example:
-
-  [
-    [ '+', 9, 'use Acme::Foo;'],
-    [ '-', 9, 'use Acme::Bar;'],
-  ]
-
-See the documentation on L<Algorithm::Diff> for more details of this structure.
-
-=head1 COPYRIGHT
-
-Copyright (c) Ivor Williams, 2003-2006
-
-=head1 LICENCE
-
-You may use, modify and distribute this module under the same terms 
-as Perl itself.
-
-=head1 SEE ALSO
-
-L<Algorithm::Diff>.
-
 =cut
 
+#----------------------------------------------------------------------------
+
+#############################################################################
+#Library Modules															#
+#############################################################################
+
 use Carp;
+
+#----------------------------------------------------------------------------
+
+# Error handling, use package vars to control it for now.
+use vars qw($error_action $error_msg $error_line);
+
+#----------------------------------------------------------------------------
+
+#############################################################################
+#Interface Methods   														#
+#############################################################################
 
 sub new {
     my $class = shift;
@@ -346,10 +285,6 @@ sub new {
     }, $class;
 }
 
-# Error handling, use package vars to control it for now.
-
-use vars qw($error_action $error_msg $error_line);
-
 sub _error {
     ( $error_line, my $msg ) = @_;
 
@@ -534,3 +469,111 @@ sub hunks {
 }
 
 1;
+
+__END__
+
+#----------------------------------------------------------------------------
+
+=head1 API
+
+=head2 new
+
+The underlying object of VCS::Lite::Delta is an array of difference 
+chunks (hunks) such as that returned by Algorithm::Diff. 
+
+The constructor takes the following forms:
+
+  my $delt = VCS::Lite::Delta->new( '/my/file.diff',$sep); # File name
+  my $delt = VCS::Lite::Delta->new( \*FILE,$sep);	# File handle
+  my $delt = VCS::Lite::Delta->new( \$string,$sep); # String as scalar ref
+  my $delt = VCS::Lite::Delta->new( \@foo, $id1, $id2) # Array ref
+
+$sep here is a regexp by which to split strings into tokens. 
+The default is to use the natural perl mechanism of $/ (which is emulated 
+when not reading from a file). The arrayref form is assuming an array of 
+hunks such as the output from L<Algorithm::Diff::diff>.
+
+The other forms assume the input is the text form of a diff listing, 
+either in diff format, or in unified format. The input is parsed, and errors
+are reported.
+
+=head2 diff
+
+  print OUTFILE $delt->diff
+
+This generates a standard diff format, for example:
+
+4c4
+< Now wherefore stopp'st thou me?
+---
+> Now wherefore stoppest thou me?
+
+=head2 udiff
+
+  print OUTFILE $delt->udiff
+
+This generates a unified diff (like diff -u) similar to the form in which
+patches are submitted.
+
+=head2 id
+
+  my ($id1,$id2) = $delt->id;
+  $delt2->id('foo.pl@@1','foo.pl@@3')
+
+The I<id> method allows get and set of the names associated with the two 
+elements being diffed. The id is set for delta objects returned by 
+VCS::Lite->diff, to the element IDs of the VCS::Lite objects being diffed.
+
+Diff format omits the file names, hence the IDs will not be populated by
+new. This is not the case with diff -u format, which includes the file
+names which are passed in and available as IDs.
+
+=head2 hunks
+
+  my @hunklist = $delt->hunks
+
+A hunk is a technical term for a section of input containing a difference.
+Each hunk is an arrayref, containing the block of lines. Each line is 
+itself an arrayref, for example:
+
+  [
+    [ '+', 9, 'use Acme::Foo;'],
+    [ '-', 9, 'use Acme::Bar;'],
+  ]
+
+See the documentation on L<Algorithm::Diff> for more details of this structure.
+
+=head1 BUGS, PATCHES & FIXES
+
+There are no known bugs at the time of this release. However, if you spot a
+bug or are experiencing difficulties that are not explained within the POD
+documentation, please send an email to barbie@cpan.org or submit a bug to the
+RT system (see link below). However, it would help greatly if you are able to 
+pinpoint problems or even supply a patch.
+
+http://rt.cpan.org/Public/Dist/Display.html?Name=VCS-Lite
+
+Fixes are dependant upon their severity and my availablity. Should a fix not
+be forthcoming, please feel free to (politely) remind me.
+
+=head1 AUTHOR
+
+  Original Author: Ivor Williams (RIP)          2008-2009
+  Current Maintainer: Barbie <barbie@cpan.org>  2009
+
+=head1 COPYRIGHT
+
+  Copyright (c) Ivor Williams, 2002-2006
+  Copyright (c) Barbie,        2009
+
+=head1 LICENCE
+
+You may use, modify and distribute this module under the same terms 
+as Perl itself.
+
+=head1 SEE ALSO
+
+L<Algorithm::Diff>.
+
+=cut
+
