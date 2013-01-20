@@ -2,7 +2,7 @@ package VCS::Lite;
 
 use strict;
 use warnings;
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 #----------------------------------------------------------------------------
 
@@ -584,6 +584,10 @@ The third parameter to the method is a sub which is called whenever a
 merge conflict occurs. This needs to either resolve the conflict or
 insert the necessary text to highlight the conflict.
 
+=head1 SEE ALSO
+
+L<Algorithm::Diff>.
+
 =head1 BUGS, PATCHES & FIXES
 
 At the time of release there is one known bug within VCS-Lite:
@@ -601,31 +605,27 @@ are able to pinpoint problems or even supply a patch.
 
 http://rt.cpan.org/Public/Dist/Display.html?Name=VCS-Lite
 
-Fixes are dependant upon their severity and my availablity. Should a fix not
+Fixes are dependent upon their severity and my availability. Should a fix not
 be forthcoming, please feel free to (politely) remind me.
 
 =head1 AUTHOR
 
-  Original Author: Ivor Williams (RIP)          2008-2009
-  Current Maintainer: Barbie <barbie@cpan.org>  2009
+  Original Author: Ivor Williams (RIP)          2002-2009
+  Current Maintainer: Barbie <barbie@cpan.org>  2009-2013
 
 =head1 COPYRIGHT
 
   Copyright (c) Ivor Williams, 2002-2006
-  Copyright (c) Barbie,        2009
+  Copyright (c) Barbie,        2009-2013
 
 =head1 LICENCE
 
-You may use, modify and distribute this module under the same terms 
-as Perl itself.
+This distribution is free software; you can redistribute it and/or
+modify it under the Artistic Licence v2.
 
 =head1 ACKNOWLEDGEMENTS
 
 Colin Robertson for suggesting and providing patches for support of
 files with unterminated last lines.
-
-=head1 SEE ALSO
-
-L<Algorithm::Diff>.
 
 =cut

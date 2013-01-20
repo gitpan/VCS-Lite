@@ -7,4 +7,3 @@ BEGIN {
 	use_ok( 'VCS::Lite' );
 	use_ok( 'VCS::Lite::Delta' );
 }
-

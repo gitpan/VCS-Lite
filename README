@@ -1,8 +1,37 @@
-VCS/Lite version 0.06
-=====================
+VCS-Lite
+========
 
-Prerequisites:  Algorithm::Diff  (version 1.13 or later) 
+DESCRIPTION
 
+This module provides the functions normally associated with a version
+control system, but without needing or implementing a version control
+system. Applications include wikis, document management systems and
+configuration management.
+
+It makes use of the module Algorithm::Diff. It provides the facility
+for basic diffing, patching and merging.
+
+UPGRADING
+
+Note that the underlying object type has changed from an ARRAY to a HASH.
+
+DEPENDENCIES
+
+The distribution requires the following modules:
+
+  Algorithm::Diff  (version 1.13 or later)
+  Carp
+  Getopt::Long
+
+For testing purposes, the following modules are desirable, but not essential:
+
+  Pod::Coverage
+  Test::CPAN::Meta
+  Test::CPAN::Meta::JSON
+  Test::Pod
+  Test::Pod::Coverage
+
+INSTALLATION
 
 To install this module type the following:
 
@@ -11,26 +40,35 @@ To install this module type the following:
    make test
    make install
 
-Scripts:
+If you are on a windows box you should use 'nmake' rather than 'make'.
+
+SCRIPTS
 
 This module puts in place vldiff.pl, vlpatch.pl and vlmerge.pl.
 
-DEPENDENCIES
+BUGS, PATCHES & FIXES
 
-This module requires these other modules and libraries:
+There are no known bugs at the time of this release. However, if you spot a
+bug or are experiencing difficulties that are not explained within the POD
+documentation, please submit a bug to the RT system (see link below). However,
+it would help greatly if you are able to pinpoint problems or even supply a 
+patch. 
 
-  Algorithm::Diff
+Fixes are dependent upon their severity and my availability. Should a fix not
+be forthcoming, please feel free to (politely) remind me by sending an email
+to barbie@cpan.org .
 
-UPGRADING
+RT: http://rt.cpan.org/Public/Dist/Display.html?Name=Template-Plugin-WikiFormat
 
-Note that the underlying object type has changed from an ARRAY to a HASH.
+AUTHOR
 
+  Original Author: Ivor Williams (RIP)          2002-2009
+  Current Maintainer: Barbie <barbie@cpan.org>  2009-2013
 
-COPYRIGHT AND LICENCE
+COPYRIGHT AND LICENSE
 
-Copyright (C) 2003-2006 Ivor Williams
-Copyright (C) 2009      Barbie
+  Copyright © 2002-2009 Ivor Williams
+  Copyright © 2009-2013 Barbie for Miss Barbell Productions.
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
-
+This distribution is free software; you can redistribute it and/or
+modify it under the Artistic License v2.

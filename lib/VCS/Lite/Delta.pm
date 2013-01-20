@@ -2,7 +2,7 @@ package VCS::Lite::Delta;
 
 use strict;
 use warnings;
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 #----------------------------------------------------------------------------
 
@@ -543,6 +543,10 @@ itself an arrayref, for example:
 
 See the documentation on L<Algorithm::Diff> for more details of this structure.
 
+=head1 SEE ALSO
+
+L<Algorithm::Diff>.
+
 =head1 BUGS, PATCHES & FIXES
 
 There are no known bugs at the time of this release. However, if you spot a
@@ -553,27 +557,23 @@ pinpoint problems or even supply a patch.
 
 http://rt.cpan.org/Public/Dist/Display.html?Name=VCS-Lite
 
-Fixes are dependant upon their severity and my availablity. Should a fix not
+Fixes are dependent upon their severity and my availability. Should a fix not
 be forthcoming, please feel free to (politely) remind me.
 
 =head1 AUTHOR
 
-  Original Author: Ivor Williams (RIP)          2008-2009
-  Current Maintainer: Barbie <barbie@cpan.org>  2009
+  Original Author: Ivor Williams (RIP)          2002-2009
+  Current Maintainer: Barbie <barbie@cpan.org>  2009-2013
 
 =head1 COPYRIGHT
 
   Copyright (c) Ivor Williams, 2002-2006
-  Copyright (c) Barbie,        2009
+  Copyright (c) Barbie,        2009-2013
 
 =head1 LICENCE
 
-You may use, modify and distribute this module under the same terms 
-as Perl itself.
-
-=head1 SEE ALSO
-
-L<Algorithm::Diff>.
+This distribution is free software; you can redistribute it and/or
+modify it under the Artistic Licence v2.
 
 =cut
 

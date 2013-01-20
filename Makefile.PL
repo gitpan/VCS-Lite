@@ -1,17 +1,30 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use 5.006;
+
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME		    => 'VCS::Lite',
-    VERSION_FROM	=> 'lib/VCS/Lite.pm', 
-    PREREQ_PM		=> {
-        Algorithm::Diff => 1.13,
-        Carp            => 0,
+    AUTHOR              => 'Barbie <barbie@cpan.org>',
+    NAME                => 'VCS::Lite',
+    VERSION_FROM        => 'lib/VCS/Lite.pm',
+    ABSTRACT            => 'A minimal version control system',
+    NO_META             => 1,
+    PREREQ_PM           => {
 
-        Getopt::Long    => 0        # required by installed scripts
-    }, 
-    ABSTRACT_FROM	=> 'lib/VCS/Lite.pm', 
-    AUTHOR     		=> 'Barbie <BARBIE@cpan.org>',
-    EXE_FILES		=> [qw( 
-    	scripts/vldiff scripts/vlpatch scripts/vlmerge)],
-	NO_META		=> 1,
+        # prereqs
+        'Algorithm::Diff'   => '1.13',
+        'Carp'              => '0',
+
+        'Getopt::Long'      => '0', # required by installed scripts
+
+        # build/test prereqs
+        'IO::File'          => '0',
+        'Test::More'        => '0.70'
+
+    },
+
+    EXE_FILES		=> [qw(scripts/vldiff scripts/vlpatch scripts/vlmerge)]
 );
