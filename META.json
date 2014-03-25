@@ -1,6 +1,6 @@
 {
     "name": "VCS-Lite",
-    "version": "0.10",
+    "version": "0.11",
     "abstract": "A minimal version control system",
     "author": ["Barbie <barbie@cpan.org>"],
 
@@ -42,11 +42,11 @@
     "provides": {
         "VCS::Lite": {
             "file": "lib/VCS/Lite.pm",
-            "version": "0.10"
+            "version": "0.11"
         },
         "VCS::Lite::Delta": {
             "file": "lib/VCS/Lite/Delta.pm",
-            "version": "0.10"
+            "version": "0.11"
         }
     },
     "no_index": {
@@ -54,7 +54,12 @@
     },
 
     "resources": {
-        "license": "http://dev.perl.org/licenses/",
-        "bugtracker": { "web": "http://rt.cpan.org/Public/Dist/Display.html?Name=VCS-Lite" }
+        "license": "http://www.perlfoundation.org/artistic_license_2_0",
+        "bugtracker": { "web": "http://rt.cpan.org/Public/Dist/Display.html?Name=VCS-Lite" },
+        "repository": {
+            "url": "git://github.com/barbie/vcs-lite.git",
+            "web": "http://github.com/barbie/vcs-lite",
+            "type": "git"
+        }
     }
 }

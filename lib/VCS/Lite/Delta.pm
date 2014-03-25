@@ -2,7 +2,7 @@ package VCS::Lite::Delta;
 
 use strict;
 use warnings;
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 #----------------------------------------------------------------------------
 
@@ -576,4 +576,3 @@ This distribution is free software; you can redistribute it and/or
 modify it under the Artistic Licence v2.
 
 =cut
-
